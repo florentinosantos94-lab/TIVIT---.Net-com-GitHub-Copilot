@@ -1,0 +1,153 @@
+filmes_database/
+│
+├── create_database.sql          # Script para criar o banco de dados e tabelas
+├── insert_data.sql              # Script para popular as tabelas com dados exemplo
+└── queries.sql                  # Script com as 12 consultas
+-- Criação do Banco de Dados
+CREATE DATABASE FilmesDB;
+
+-- Utilizando o Banco de Dados
+USE FilmesDB;
+
+-- Criação da Tabela Filmes
+CREATE TABLE Filmes (
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+    Titulo VARCHAR(255) NOT NULL,
+    Ano INT,
+    Duracao INT,
+    Classificacao VARCHAR(50)
+);
+
+-- Criação da Tabela Atores
+CREATE TABLE Atores (
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+    Nome VARCHAR(255) NOT NULL,
+    Nascimento DATE
+);
+
+-- Criação da Tabela Generos
+CREATE TABLE Generos (
+    Id INT PRIMARY KEY AUTO_INCREMENT,
+    Descricao VARCHAR(100) NOT NULL
+);
+
+-- Criação da Tabela ElencoFilme (Relacionamento entre Filmes e Atores)
+CREATE TABLE ElencoFilme (
+    FilmeId INT,
+    AtorId INT,
+    PRIMARY KEY(FilmeId, AtorId),
+    FOREIGN KEY (FilmeId) REFERENCES Filmes(Id),
+    FOREIGN KEY (AtorId) REFERENCES Atores(Id)
+);
+
+-- Criação da Tabela FilmesGenero (Relacionamento entre Filmes e Gêneros)
+CREATE TABLE FilmesGenero (
+    FilmeId INT,
+    GeneroId INT,
+    PRIMARY KEY(FilmeId, GeneroId),
+    FOREIGN KEY (FilmeId) REFERENCES Filmes(Id),
+    FOREIGN KEY (GeneroId) REFERENCES Generos(Id)
+);
+-- Usar o Banco de Dados
+USE FilmesDB;
+
+-- Inserir dados em Atores
+INSERT INTO Atores (Nome, Nascimento) VALUES 
+('Robert Downey Jr.', '1965-04-04'),
+('Chris Evans', '1981-06-13'),
+('Scarlett Johansson', '1984-11-22');
+
+-- Inserir dados em Generos
+INSERT INTO Generos (Descricao) VALUES 
+('Ação'),
+('Drama'),
+('Comédia');
+
+-- Inserir dados em Filmes
+INSERT INTO Filmes (Titulo, Ano, Duracao, Classificacao) VALUES 
+('Vingadores: Ultimato', 2019, 181, 'PG-13'),
+('O Irlandês', 2019, 209, 'R'),
+('Os Vingadores', 2012, 143, 'PG-13');
+
+-- Inserir dados em ElencoFilme
+INSERT INTO ElencoFilme (FilmeId, AtorId) VALUES 
+(1, 1),
+(1, 2),
+(1, 3),
+(2, 1),
+(2, 3),
+(3, 1);
+
+-- Inserir dados em FilmesGenero
+INSERT INTO FilmesGenero (FilmeId, GeneroId) VALUES 
+(1, 1),
+(1, 2),
+(2, 2),
+(3, 1),
+(3, 3);
+-- 1. Listar todos os filmes
+SELECT * FROM Filmes;
+
+-- 2. Listar todos os atores
+SELECT * FROM Atores;
+
+-- 3. Listar todos os gêneros
+SELECT * FROM Generos;
+
+-- 4. Listar todos os filmes com seus gêneros
+SELECT f.Titulo, g.Descricao
+FROM Filmes f
+JOIN FilmesGenero fg ON f.Id = fg.FilmeId
+JOIN Generos g ON fg.GeneroId = g.Id;
+
+-- 5. Listar todos os filmes com seus atores
+SELECT f.Titulo, a.Nome
+FROM Filmes f
+JOIN ElencoFilme ef ON f.Id = ef.FilmeId
+JOIN Atores a ON ef.AtorId = a.Id;
+
+-- 6. Contar quantos filmes cada ator atuou
+SELECT a.Nome, COUNT(ef.FilmeId) AS TotalFilmes
+FROM Atores a
+JOIN ElencoFilme ef ON a.Id = ef.AtorId
+GROUP BY a.Nome;
+
+-- 7. Listar todos os filmes de um determinado gênero (ex: 'Ação')
+SELECT f.Titulo
+FROM Filmes f
+JOIN FilmesGenero fg ON f.Id = fg.FilmeId
+JOIN Generos g ON fg.GeneroId = g.Id
+WHERE g.Descricao = 'Ação';
+
+-- 8. Listar atores que atuaram em filmes lançados após 2010
+SELECT DISTINCT a.Nome
+FROM Atores a
+JOIN ElencoFilme ef ON a.Id = ef.AtorId
+JOIN Filmes f ON ef.FilmeId = f.Id
+WHERE f.Ano > 2010;
+
+-- 9. Listar a média de duração dos filmes por gênero
+SELECT g.Descricao, AVG(f.Duracao) AS MediaDuracao
+FROM Filmes f
+JOIN FilmesGenero fg ON f.Id = fg.FilmeId
+JOIN Generos g ON fg.GeneroId = g.Id
+GROUP BY g.Descricao;
+
+-- 10. Listar tudo sobre o filme com o maior número de atores
+SELECT f.*, COUNT(ef.AtorId) AS TotalAtores
+FROM Filmes f
+JOIN ElencoFilme ef ON f.Id = ef.FilmeId
+GROUP BY f.Id
+ORDER BY TotalAtores DESC
+LIMIT 1;
+
+-- 11. Listar filmes e suas classificações, ordenados por ano
+SELECT f.Titulo, f.Classificacao, f.Ano
+FROM Filmes f
+ORDER BY f.Ano;
+
+-- 12. Listar todos os gêneros e quantos filmes pertencem a cada um
+SELECT g.Descricao, COUNT(fg.FilmeId) AS TotalFilmes
+FROM Generos g
+JOIN FilmesGenero fg ON g.Id = fg.GeneroId
+GROUP BY g.Descricao;
